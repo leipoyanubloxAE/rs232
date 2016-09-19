@@ -226,6 +226,8 @@ http://man7.org/linux/man-pages/man3/termios.3.html
   new_port_settings.c_cc[VMIN] = 0;      /* block untill n bytes are received */
   new_port_settings.c_cc[VTIME] = 0;     /* block untill a timer expires (n * 100 mSec.) */
 
+  new_port_settings.c_cflag |= CRTSCTS;    /* Also called CRTSCTS */
+
   cfsetispeed(&new_port_settings, baudr);
   cfsetospeed(&new_port_settings, baudr);
 

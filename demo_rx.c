@@ -39,7 +39,7 @@ int main()
   char* outputFilename = "out.out";
 
   unsigned char *buf=NULL;
-  int bufSize=64*1024;
+  int bufSize=4*1024;
   int countr=0, totalr=0;
 
   signal(SIGINT, intHandler);
@@ -74,14 +74,15 @@ int main()
     if(countr > 0)
     {
       write(fdw, buf, countr);
-      printf("received %i bytes. total received %i bytes.\n", countr, totalr);
+      //write(1, buf, countr);
+      //printf("received %i bytes. total received %i bytes.\n", countr, totalr);
     }
 
-#if 0
+#if 1
 #ifdef _WIN32
-    Sleep(100);
+    Sleep(10);
 #else
-    usleep(100000);  /* sleep for 100 milliSeconds */
+    usleep(10000);  /* sleep for 100 milliSeconds */
 #endif
 #endif
   }
