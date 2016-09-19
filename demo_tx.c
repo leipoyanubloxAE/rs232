@@ -23,19 +23,38 @@ compile with the command: gcc demo_tx.c rs232.c -Wall -Wextra -o2 -o test_tx
 
 
 
-int main()
+int main(int argc, char* argv[])
 {
-  int i=0,
-      cport_nr=16,        /* /dev/ttyS0 (COM1 on windows) */
+  int cport_nr=16,        /* /dev/ttyS0 (COM1 on windows) */
       bdrate=3000000;       /* 9600 baud */
 
-  char mode[]={'8','N','1',0},
-       str[2][512];
+  char mode[]={'8','N','1',0};
+  unsigned char *buf=NULL;
+  int bufSize=1024;
+  int fdr = 0, countr=0, totalr=0;
 
+  if(argc<2)
+  {
+    printf("Please specify the file to send\n");
+    return(0);  
+  }
+ 
+  printf("File to send is %s\n", argv[1]); 
+  fdr = open(argv[1], O_RDONLY | O_SYNC);
+  if(fdr==0)
+  {
+    printf("Failed to open %s\n", argv[1]);
+    return(0);
+  }  
 
-  strcpy(str[0], "The quick brown fox jumped over the lazy grey dog.\n");
+  buf = malloc(sizeof(unsigned char)*bufSize);
+  if(buf==NULL)
+  {
+    printf("Insufficient memory\n");
+    return(0);
+  }
+  memset(buf, 0, bufSize);
 
-  strcpy(str[1], "Happy serial programming!\n");
 
   if(RS232_OpenComport(cport_nr, bdrate, mode))
   {
@@ -44,22 +63,21 @@ int main()
     return(0);
   }
 
-  while(1)
+  do
   {
-    RS232_cputs(cport_nr, str[i]);
+    countr = read(fdr, buf, bufSize);
+    totalr += countr;
+    printf("read %d bytes. Total sent %i bytes\n", countr, totalr);
 
-    printf("sent: %s\n", str[i]);
+    RS232_SendBuf(cport_nr, buf, countr);
 
 #ifdef _WIN32
-    Sleep(1000);
+    Sleep(10);
 #else
-    usleep(1000000);  /* sleep for 1 Second */
+    usleep(10000);  /* sleep for 1 Second */
 #endif
-
-    i++;
-
-    i %= 2;
-  }
+    
+  } while( countr > 0);
 
   return(0);
 }

@@ -12,6 +12,7 @@ compile with the command: gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -21,18 +22,42 @@ compile with the command: gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
 
 #include "rs232.h"
 
+int fdw = 0;
 
+void intHandler(int dummy) {
+  close(fdw);
+  printf("closing fdw\n");
+  exit(0);
+}
 
 int main()
 {
-  int i, n,
-      cport_nr=0,        /* /dev/ttyS0 (COM1 on windows) */
-      bdrate=9600;       /* 9600 baud */
-
-  unsigned char buf[4096];
+  int cport_nr=17,        /* /dev/ttyS0 (COM1 on windows) */
+      bdrate=3000000;       /* 9600 baud */
 
   char mode[]={'8','N','1',0};
+  char* outputFilename = "out.out";
 
+  unsigned char *buf=NULL;
+  int bufSize=64*1024;
+  int countr=0, totalr=0;
+
+  signal(SIGINT, intHandler);
+
+  fdw = open(outputFilename, O_WRONLY | O_CREAT, 0644);
+  if(fdw==0)
+  {
+    printf("Failed to open %s\n", outputFilename);
+    return(0);
+  } 
+
+  buf = malloc(sizeof(unsigned char)*bufSize);
+  if(buf==NULL)
+  {
+    printf("Insufficient memory\n");
+    return(0);
+  }
+  memset(buf, 0, bufSize);
 
   if(RS232_OpenComport(cport_nr, bdrate, mode))
   {
@@ -43,27 +68,21 @@ int main()
 
   while(1)
   {
-    n = RS232_PollComport(cport_nr, buf, 4095);
+    countr = RS232_PollComport(cport_nr, buf, bufSize);
+    totalr += countr;
 
-    if(n > 0)
+    if(countr > 0)
     {
-      buf[n] = 0;   /* always put a "null" at the end of a string! */
-
-      for(i=0; i < n; i++)
-      {
-        if(buf[i] < 32)  /* replace unreadable control-codes by dots */
-        {
-          buf[i] = '.';
-        }
-      }
-
-      printf("received %i bytes: %s\n", n, (char *)buf);
+      write(fdw, buf, countr);
+      printf("received %i bytes. total received %i bytes.\n", countr, totalr);
     }
 
+#if 0
 #ifdef _WIN32
     Sleep(100);
 #else
     usleep(100000);  /* sleep for 100 milliSeconds */
+#endif
 #endif
   }
 
