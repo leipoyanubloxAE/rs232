@@ -21,7 +21,29 @@ compile with the command: gcc demo_tx.c rs232.c -Wall -Wextra -o2 -o test_tx
 
 #include "rs232.h"
 
+void delay(int ms)
+{
+#ifdef _WIN32
+      Sleep(ms);
+#else
+      usleep(ms*1000);  
+#endif
+}
 
+void send_buffer(int cport_nr, unsigned char* buf, int countr)
+{
+  int countw=0, totalw=0;
+
+  while(totalw!=countr)
+  {
+    countw = RS232_SendBuf(cport_nr, buf+totalw, countr-totalw);
+    totalw +=countw;
+    if(totalw != countr)
+    {
+      delay(10);
+    }
+  }
+}
 
 int main(int argc, char* argv[])
 {
@@ -30,7 +52,7 @@ int main(int argc, char* argv[])
 
   char mode[]={'8','N','1',0};
   unsigned char *buf=NULL;
-  int bufSize=1024;
+  int bufSize=(8*1024);
   int fdr = 0, countr=0, totalr=0;
 
   if(argc<2)
@@ -69,14 +91,18 @@ int main(int argc, char* argv[])
     totalr += countr;
     printf("read %d bytes. Total sent %i bytes\n", countr, totalr);
 
-    RS232_SendBuf(cport_nr, buf, countr);
+AGAIN:
+    if(RS232_IsCTSEnabled(cport_nr))
+    {
+      send_buffer(cport_nr, buf, countr);
+    }
+    else
+    {
+      delay(10);
+      goto AGAIN;
+    }
 
-#ifdef _WIN32
-    Sleep(10);
-#else
-    usleep(10000);  /* sleep for 1 Second */
-#endif
-    
+  delay(10);
   } while( countr > 0);
 
   return(0);
