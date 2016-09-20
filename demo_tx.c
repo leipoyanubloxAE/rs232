@@ -20,15 +20,8 @@ compile with the command: gcc demo_tx.c rs232.c -Wall -Wextra -o2 -o test_tx
 #endif
 
 #include "rs232.h"
-
-void delay(int ms)
-{
-#ifdef _WIN32
-      Sleep(ms);
-#else
-      usleep(ms*1000);  
-#endif
-}
+#include "utils/utils.h"
+#include "utils/iniparser.h"
 
 void send_buffer(int cport_nr, unsigned char* buf, int countr)
 {
@@ -47,9 +40,9 @@ void send_buffer(int cport_nr, unsigned char* buf, int countr)
 
 int main(int argc, char* argv[])
 {
-  int cport_nr=16,        /* /dev/ttyS0 (COM1 on windows) */
-      bdrate=3000000;       /* 9600 baud */
-
+  dictionary *conf=NULL;
+  int cport_nr=16, 
+      bdrate=115200;  
   char mode[]={'8','N','1',0};
   unsigned char *buf=NULL;
   int bufSize=(8*1024);
@@ -60,7 +53,8 @@ int main(int argc, char* argv[])
     printf("Please specify the file to send\n");
     return(0);  
   }
- 
+
+  /* Open input file and allocate read buffer */ 
   printf("File to send is %s\n", argv[1]); 
   fdr = open(argv[1], O_RDONLY | O_SYNC);
   if(fdr==0)
@@ -77,7 +71,22 @@ int main(int argc, char* argv[])
   }
   memset(buf, 0, bufSize);
 
+  /* read uart setting from config file */
+  conf = iniparser_load("uart.conf");
+  if(conf==NULL)
+  {
+    printf("Faied to open config file uart.conf\n");
+  }
 
+  cport_nr = iniparser_getint(conf, "tx:cport_nr", 16);
+  bdrate = iniparser_getint(conf, "tx:bdrate", 115200);
+  strncpy(mode, iniparser_getstring(conf, "tx:mode", "8N1"), 4);
+  printf("cport is %d\n", cport_nr);
+  printf("rate is %d\n", bdrate);
+  printf("mode is %c %c %c %c\n", mode[0],mode[1],mode[2],mode[3]);
+  iniparser_freedict(conf);
+
+  /* Open uart port */
   if(RS232_OpenComport(cport_nr, bdrate, mode))
   {
     printf("Can not open comport\n");

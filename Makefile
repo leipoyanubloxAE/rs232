@@ -1,8 +1,9 @@
+OUTPUTDIR=output
 
 all:
-	gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
-	gcc demo_tx.c rs232.c -Wall -Wextra -o2 -o test_tx
+	mkdir -p $(OUTPUTDIR)
+	gcc demo_rx.c rs232.c utils/utils.c utils/dictionary.c utils/iniparser.c -Wall -Wextra -o2 -o $(OUTPUTDIR)/test_rx
+	gcc demo_tx.c rs232.c utils/utils.c utils/dictionary.c utils/iniparser.c -Wall -Wextra -o2 -o $(OUTPUTDIR)/test_tx
 
 clean:
-	rm -rf test_rx
-	rm -rf test_tx
+	rm -rf $(OUTPUTDIR)
