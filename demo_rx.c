@@ -24,7 +24,7 @@ compile with the command: gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
 
 int fdw = 0;
 
-void intHandler(int dummy) {
+void intHandler(int signo) {
   close(fdw);
   printf("closing fdw\n");
   exit(0);
@@ -42,7 +42,10 @@ int main()
   int bufSize=4*1024;
   int countr=0, totalr=0;
 
-  signal(SIGINT, intHandler);
+  if(signal(SIGINT, intHandler)==SIG_ERR)
+  {
+    printf("Unable to catch SIGINT\n");
+  }
 
   fdw = open(outputFilename, O_WRONLY | O_CREAT, 0644);
   if(fdw==0)
