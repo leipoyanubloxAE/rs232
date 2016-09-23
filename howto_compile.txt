@@ -1,17 +1,18 @@
 
 Compiling the demo's can be done as follows:
 
-gcc demo_rx.c rs232.c -Wall -Wextra -o2 -o test_rx
-
-gcc demo_tx.c rs232.c -Wall -Wextra -o2 -o test_tx
+make
 
 Run the demo by typing:
 
-./test_rx
+sudo chmod a+rw /dev/ttyUSB*
 
+./output/test_tx FILE_TO_SEND
+
+./output/test_rx FILE_TO_DUMP  // dump to file
 or
+./output/test_rx   // dump to stdout
 
-./test_tx
 
 
 
